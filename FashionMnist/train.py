@@ -223,10 +223,10 @@ def train(opt, train_data, test_data):
 def main():
 
     args = argparse.ArgumentParser()
-    args.add_argument('--gpu', int, 0, "use GPU")
-    args.add_argument('--lr', float, 0.0001, 'learning rate')
-    args.add_argument('--batch_size', int, 64, 'batch size')
-    args.add_argument('--epoches', int, 30, 'training epoches')
+    args.add_argument('--gpu', type=int, default=0, help="use GPU")
+    args.add_argument('--lr', type=float, default=0.0001, help='learning rate')
+    args.add_argument('--batch_size', type=int, default=64, help='batch size')
+    args.add_argument('--epoches', type=int, default=30, help='training epoches')
 
     opt = args.parse_args()
 
