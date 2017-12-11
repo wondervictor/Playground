@@ -132,6 +132,7 @@ class Classifier(nn.Module):
 
     def forward(self, x):
         out = self.conv1(x)
+        out = self.conv2(x)
         out = self.res_incep_block_1(out)
         out = self.pool(out)
         out = self.res_incep_block_2(out)
