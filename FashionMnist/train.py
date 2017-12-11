@@ -238,3 +238,4 @@ def main():
 
     train(opt, train_data, testset)
 
+main()
