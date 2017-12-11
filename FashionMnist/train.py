@@ -4,7 +4,6 @@
 import struct
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -69,6 +68,7 @@ def get_label(idx):
 def save_model(path, model):
     torch.save(model.state_dict(), path)
 
+
 def load_model(path):
     return torch.load(path)
 
@@ -77,7 +77,7 @@ class BasicConv(nn.Module):
     def __init__(self, in_chan, out_chan, kernel_size, stride, padding):
         super(BasicConv, self).__init__()
         self.conv = nn.Conv2d(in_chan, out_chan, kernel_size=kernel_size, stride=stride, padding=padding,
-                              bias=False)  # verify bias false
+                              bias=False)
         self.bn = nn.BatchNorm2d(out_chan, eps=0.001, momentum=0.1, affine=True)
         self.relu = nn.ReLU(inplace=False)
 
@@ -122,11 +122,12 @@ class ResInceptionBlock(nn.Module):
 class Classifier(nn.Module):
     def __init__(self):
         super(Classifier, self).__init__()
-        self.conv1 = BasicConv(1, 32, 1, 1, 0)
-        self.res_incep_block_1 = ResInceptionBlock(32, 32, 1.0)
-        self.res_incep_block_2 = ResInceptionBlock(32, 32, 1.0)
+        self.conv1 = BasicConv(1, 32, 3, 1, 1)
+        self.conv2 = BasicConv(32, 64, 3, 1, 1)
+        self.res_incep_block_1 = ResInceptionBlock(64, 64, 1.0)
+        self.res_incep_block_2 = ResInceptionBlock(64, 64, 1.0)
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.fc = nn.Linear(32 * 7 * 7, 512)
+        self.fc = nn.Linear(64 * 7 * 7, 512)
         self.output = nn.Linear(512, 10)
 
     def forward(self, x):
@@ -135,7 +136,7 @@ class Classifier(nn.Module):
         out = self.pool(out)
         out = self.res_incep_block_2(out)
         out = self.pool(out)
-        out = out.view(-1, 32 * 7 * 7)
+        out = out.view(-1, 64 * 7 * 7)
         out = F.leaky_relu(self.fc(out), 0.3)
         out = F.softmax(self.output(out))
         return out
@@ -202,7 +203,10 @@ def train(opt, train_data, test_data):
 
             prob = classifier(images)
             cur_loss = criterion(prob, label)
-            loss += cur_loss.data.numpy()[0]
+            if opt.gpu == 1:
+                loss += cur_loss.cpu().data.numpy()[0]
+            else:
+                loss += cur_loss.data.numpy()[0]
             classifier_optimizer.zero_grad()
             cur_loss.backward()
             classifier_optimizer.step()
@@ -219,10 +223,10 @@ def train(opt, train_data, test_data):
 def main():
 
     args = argparse.ArgumentParser()
-    args.add_argument('--gpu', 0, "use GPU")
-    args.add_argument('--lr', 0.0001, 'learning rate')
-    args.add_argument('--batch_size', 64, 'batch size')
-    args.add_argument('--epoches', 30, 'training epoches')
+    args.add_argument('--gpu', int, 0, "use GPU")
+    args.add_argument('--lr', float, 0.0001, 'learning rate')
+    args.add_argument('--batch_size', int, 64, 'batch size')
+    args.add_argument('--epoches', int, 30, 'training epoches')
 
     opt = args.parse_args()
 
