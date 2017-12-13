@@ -148,20 +148,20 @@ class DeepConvNet(nn.Module):
     def __init__(self):
         super(DeepConvNet, self).__init__()
         self.conv_block_1 = nn.Sequential(
-            nn.Conv2d(1, 32, 5, stride=1, padding=2),
+            nn.Conv2d(1, 64, 5, stride=1, padding=2),
             nn.LeakyReLU(0.1),
-            nn.Conv2d(32, 64, 3, stride=1, padding=1),
+            nn.Conv2d(64, 128, 3, stride=1, padding=1),
             nn.LeakyReLU(0.1),
-            nn.BatchNorm2d(64),
+            nn.BatchNorm2d(128),
             nn.MaxPool2d(2, 2),
         )
 
         self.conv_block_2 = nn.Sequential(
-            nn.Conv2d(64, 128, 3, stride=1, padding=1),
-            nn.LeakyReLU(0.1),
             nn.Conv2d(128, 256, 3, stride=1, padding=1),
             nn.LeakyReLU(0.1),
-            nn.BatchNorm2d(256),
+            nn.Conv2d(256, 512, 3, stride=1, padding=1),
+            nn.LeakyReLU(0.1),
+            nn.BatchNorm2d(512),
             nn.MaxPool2d(2, 2),
         )
 
@@ -174,20 +174,22 @@ class DeepConvNet(nn.Module):
         # )
 
         self.fc = nn.Sequential(
-            nn.Linear(256*7*7, 1024),
+            nn.Linear(512*7*7, 1024),
+            nn.Dropout(p=0.2),
             nn.ReLU(),
             nn.Linear(1024, 1024),
             nn.LeakyReLU(0.05),
             nn.Dropout(0.2),
-            nn.Linear(1024, 10),
+            nn.Linear(1024, 128),
+            nn.ReLU(),
+            nn.Linear(128, 10),
             nn.Softmax()
         )
 
     def forward(self, x):
         out = self.conv_block_1(x)
         out = self.conv_block_2(out)
-        print(out.size())
-        out = out.view(out.size()[0], 256*7*7)
+        out = out.view(out.size()[0], 512*7*7)
         out = self.fc(out)
         return out
 
