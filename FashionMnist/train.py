@@ -170,7 +170,7 @@ class DeepConvNet(nn.Module):
             nn.ReLU(),
             nn.Conv2d(256, 512, 3, stride=1, padding=1),
             nn.MaxPool2d(2, 2),
-            nn.BatchNorm2d(256)
+            nn.BatchNorm2d(512)
         )
 
         self.fc = nn.Sequential(
@@ -185,7 +185,7 @@ class DeepConvNet(nn.Module):
         out = self.conv_block_1(x)
         out = self.conv_block_2(out)
         out = self.conv_block_3(out)
-        out = out.view(out.size()[0], 256*3*3)
+        out = out.view(out.size()[0], 512*3*3)
         out = self.fc(out)
         return out
 
