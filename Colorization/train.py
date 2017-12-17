@@ -84,9 +84,8 @@ def train(opt):
         loss = 0
         for batch in xrange(num_samples/batch_size):
             images = np.array(data[batch:batch+batch_size])
-            images = images.transpose((0,3,1,2))
+            images = images.transpose((0, 3, 1, 2))
             images = Variable(torch.FloatTensor(images))
-            #images = transform_totensor(images)
             gray_images = batch_gray(images)
 
             if opt.gpu:
@@ -94,9 +93,14 @@ def train(opt):
                 gray_images = gray_images.cuda()
             gray_images = gray_images.unsqueeze(1)
             gen_images = generator(gray_images)
-            content_loss = content_critetion(batch_gray(gen_images), gray_images)
+            gen_gray = batch_gray(gen_images)
+            if opt.gpu:
+                gen_gray = gen_gray.cuda()
+            content_loss = content_critetion(gen_gray, gray_images)
             color_loss = color_criterion(gen_images, images)
             current_loss = content_loss * gamma + color_loss
+            if opt.gpu:
+                current_loss = current_loss.cuda()
             loss += current_loss.cpu().data.numpy()[0]
 
             train_optimizer.zero_grad()
