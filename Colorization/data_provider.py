@@ -14,7 +14,7 @@ def get_data(path, name='cifar'):
             datadict = pickle.load(f)
             x = datadict['data']
             data = x.reshape(50000, 32, 32, 3).astype("float")
-
+            return data
     else:
         return data
 

@@ -3,6 +3,7 @@
 
 import argparse
 import torch
+import numpy as np
 import torch.optim as optimizer
 import torch.nn as nn
 import torchvision.transforms as transforms
@@ -82,15 +83,16 @@ def train(opt):
 
         loss = 0
         for batch in xrange(num_samples/batch_size):
-            images = data[batch:batch+batch_size]
+            images = np.array(data[batch:batch+batch_size])
+            images = images.transpose((0,3,1,2))
             images = Variable(torch.FloatTensor(images))
-            images = transform_totensor(images)
+            #images = transform_totensor(images)
             gray_images = batch_gray(images)
 
             if opt.gpu:
                 images = images.cuda()
                 gray_images = gray_images.cuda()
-
+            gray_images = gray_images.unsqueeze(1)
             gen_images = generator(gray_images)
             content_loss = content_critetion(batch_gray(gen_images), gray_images)
             color_loss = color_criterion(gen_images, images)
