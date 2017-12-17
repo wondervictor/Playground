@@ -23,6 +23,10 @@ transform = transforms.Compose([
     transforms.ToPILImage(),
 ])
 
+transform_totensor = transforms.Compose([
+    transforms.ToTensor()
+])
+
 
 def batch_gray(images):
     """
@@ -80,6 +84,7 @@ def train(opt):
         for batch in xrange(num_samples/batch_size):
             images = data[batch:batch+batch_size]
             images = Variable(torch.FloatTensor(images))
+            images = transform_totensor(images)
             gray_images = batch_gray(images)
 
             if opt.gpu:
