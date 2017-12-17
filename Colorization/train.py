@@ -139,7 +139,6 @@ if __name__ == '__main__':
     args.add_argument('--gpu', type=int, default=0, help='use gpu')
     args.add_argument('--model', type=str, default="unet", help='network model')
     args.add_argument('--path', type=str, default="./", help='dataset dir')
-    args.add_argument('--path', type=str, default="./", help='dataset dir')
     args.add_argument('--lr', type=float, default=0.0001, help='learning rate')
     args.add_argument('--dataset', type=str, default="cifar", help='dataset')
 
