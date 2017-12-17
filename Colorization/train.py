@@ -71,7 +71,7 @@ def train(opt):
     train_optimizer = optimizer.Adam(lr=opt.lr, params=generator.parameters())
 
     print("Load Data ...")
-    data = get_data()
+    data = get_data(opt.path, opt.dataset)
     num_samples = len(data)
 
     for epoch in xrange(epoches):
@@ -131,8 +131,21 @@ def inference(opt, model, x):
     print("Inference Ended")
 
 
+if __name__ == '__main__':
 
+    args = argparse.ArgumentParser()
+    args.add_argument('--batch_size', type=int, default=32, help='batch size')
+    args.add_argument('--epoches', type=int, default=30, help='epoch')
+    args.add_argument('--gpu', type=int, default=0, help='use gpu')
+    args.add_argument('--model', type=str, default="unet", help='network model')
+    args.add_argument('--path', type=str, default="./", help='dataset dir')
+    args.add_argument('--path', type=str, default="./", help='dataset dir')
+    args.add_argument('--lr', type=float, default=0.0001, help='learning rate')
+    args.add_argument('--dataset', type=str, default="cifar", help='dataset')
 
+    params = args.parse_args()
+
+    train(opt=params)
 
 
 
