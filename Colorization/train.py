@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-
+from __future__ import division
 import argparse
 import torch
 import numpy as np
@@ -84,7 +84,7 @@ def train(opt):
     for epoch in xrange(epoches):
 
         loss = 0
-        for batch in xrange(num_samples/batch_size):
+        for batch in xrange(num_samples//batch_size):
             images = np.array(data[batch:batch+batch_size])
             images = images.transpose((0, 3, 1, 2))
             images = Variable(torch.FloatTensor(images))
@@ -99,7 +99,8 @@ def train(opt):
             if opt.gpu == 1:
                 gen_gray = gen_gray.cuda()
 
-            color_loss = color_criterion(gen_images, images)
+            (B, C, H, W) = gen_images.size()
+            color_loss = (1/C*H*W)*color_criterion(gen_images, images)
             current_loss = color_loss
             #content_loss = content_criterion(gen_gray, ge)
             #current_loss = criterion(gen_images, images, gen_gray, gray_images)
