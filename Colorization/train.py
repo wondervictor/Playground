@@ -100,7 +100,7 @@ def train(opt):
                 gen_gray = gen_gray.cuda()
 
             (B, C, H, W) = gen_images.size()
-            color_loss = (1/C*H*W)*color_criterion(gen_images, images)
+            color_loss = (1/(C*H*W))*color_criterion(gen_images, images)
             current_loss = color_loss
             #content_loss = content_criterion(gen_gray, ge)
             #current_loss = criterion(gen_images, images, gen_gray, gray_images)
@@ -113,8 +113,12 @@ def train(opt):
                 print("Epoch: %s Batch: %d Loss: %s" %
                       (epoch, batch, loss/(batch+1)))
 
-        torch.save(generator.state_dict(), 'model_params/epoch_%s_params.model' % epoch)
-        torch.save(generator.cpu().state_dict(), 'model_params/epoch_%s_cpu_params.model' % epoch)
+        if opt.gpu:
+            torch.save(generator.state_dict(), 'model_params/epoch_%s_params.model' % epoch)
+            torch.save(generator.cpu().state_dict(), 'model_params/epoch_%s_cpu_params.model' % epoch)
+            generator = generator.cuda()
+        else:
+            torch.save(generator.state_dict(), 'model_params/epoch_%s_cpu_params.model' % epoch)
 
 
 def inference(opt):
