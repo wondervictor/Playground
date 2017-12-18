@@ -113,6 +113,7 @@ def train(opt):
                       (epoch, batch, loss/(batch+1)))
 
         torch.save(generator.state_dict(), 'model_params/epoch_%s_params.model' % epoch)
+        torch.save(generator.cpu().state_dict(), 'model_params/epoch_%s_cpu_params.model' % epoch)
 
 
 def inference(opt):
