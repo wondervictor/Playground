@@ -9,6 +9,7 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 from torch.autograd import Variable
 from model import unet
+from model.net import OverallLoss
 from data_provider import get_data
 
 
@@ -61,16 +62,17 @@ def train(opt):
     model = opt.model
     # 'UNet'
 
-    color_criterion = nn.MSELoss()
-    content_criterion = nn.L1Loss()
+    # color_criterion = nn.MSELoss()
+    # content_criterion = nn.L1Loss()
     generator = unet.UNet()
-
+    criterion = OverallLoss()
     gamma = 0.5
 
     if opt.gpu == 1:
-        color_criterion = color_criterion.cuda()
-        content_criterion = content_criterion.cuda()
+        #color_criterion = color_criterion.cuda()
+        #content_criterion = content_criterion.cuda()
         generator = generator.cuda()
+        criterion = criterion.cuda()
 
     train_optimizer = optimizer.Adam(lr=opt.lr, params=generator.parameters())
 
@@ -97,9 +99,10 @@ def train(opt):
                 gen_gray = gen_gray.cuda()
             height = gen_images.size()[2]
             width = gen_images.size()[3]
-            content_loss = content_criterion(gen_gray, gray_images)
-            color_loss = color_criterion(gen_images, images)
-            current_loss = (1/(height*width))*(content_loss * gamma + color_loss)
+            #content_loss = color_criterion(gen_gray, gray_images)
+            #color_loss = color_criterion(gen_images, images)
+            #current_loss = (1/(height*width))*(content_loss * gamma + color_loss)
+            current_loss = criterion(gen_images, images, gen_gray, gray_images)
             loss += current_loss.cpu().data.numpy()[0]
             train_optimizer.zero_grad()
             current_loss.backward()
