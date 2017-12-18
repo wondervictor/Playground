@@ -97,3 +97,6 @@ ENV/
 .ipynb_checkpoints
 
 data
+model_params
+test_*
+.DS_Store
