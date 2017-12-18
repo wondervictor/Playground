@@ -96,6 +96,8 @@ class UNet(nn.Module):
 
         x = self.out_convs(x8)
 
+        # gray_images = x[:,0]+x[:,1]+x[:2]
+
         return x
 
 

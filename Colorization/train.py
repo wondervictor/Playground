@@ -6,6 +6,7 @@ import torch
 import numpy as np
 import torch.optim as optimizer
 import torch.nn as nn
+from PIL import Image
 import torchvision.transforms as transforms
 from torch.autograd import Variable
 from model import unet
@@ -99,7 +100,7 @@ def train(opt):
                 gen_gray = gen_gray.cuda()
 
             color_loss = color_criterion(gen_images, images)
-            current_loss = color_criterion
+            current_loss = color_loss
             #content_loss = content_criterion(gen_gray, ge)
             #current_loss = criterion(gen_images, images, gen_gray, gray_images)
             loss += current_loss.cpu().data.numpy()[0]
@@ -114,18 +115,26 @@ def train(opt):
         torch.save(generator.state_dict(), 'model_params/epoch_%s_params.model' % epoch)
 
 
-def inference(opt, model, x):
+def inference(opt):
 
-    if type(model) == str:
-        model = unet.UNet()
-        model.load_state_dict(torch.load(model))
+    # if type(model) == str:
+    #     model = unet.UNet()
+    #     model.load_state_dict(torch.load(model))
+    #
+    # if type(x) != list:
+    #     x = Variable(torch.FloatTensor(x))
+    #     x = x.unsqueeze(0)
 
-    if type(x) != list:
-        x = Variable(torch.FloatTensor(x))
-        x = x.unsqueeze(0)
+    assert opt.model_params is None, "Model Param Dir cannot be None"
+    assert opt.image_name is None, "Image cannot be None"
 
-    else:
-        x = Variable(torch.FloatTensor(x))
+    image = Image.open(opt.image_name)
+
+    x = transform_totensor(image)
+    x = Variable(torch.FloatTensor(x))
+
+    model = unet.UNet()
+    model.load_state_dict(torch.load(opt.model_params))
 
     if opt.gpu == 1:
         model = model.cuda()
@@ -147,16 +156,22 @@ if __name__ == '__main__':
 
     args = argparse.ArgumentParser()
     args.add_argument('--batch_size', type=int, default=32, help='batch size')
+    args.add_argument('--infer', type=int, default=0, help='Inference with trained model')
+    args.add_argument('--model_params', type=str, default=None, help='trained model dir')
     args.add_argument('--epoches', type=int, default=30, help='epoch')
     args.add_argument('--gpu', type=int, default=0, help='use gpu')
     args.add_argument('--model', type=str, default="unet", help='network model')
     args.add_argument('--path', type=str, default="./", help='dataset dir')
     args.add_argument('--lr', type=float, default=0.0001, help='learning rate')
     args.add_argument('--dataset', type=str, default="cifar", help='dataset')
+    args.add_argument('--image_name', type=str, default=None, help='dataset')
 
     params = args.parse_args()
 
-    train(opt=params)
+    if params.infer == 1:
+        inference(params)
+    else:
+        train(opt=params)
 
 
 
