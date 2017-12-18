@@ -68,7 +68,7 @@ def train(opt):
 
     gamma = 0.5
 
-    if opt.gpu:
+    if opt.gpu == 1:
         color_criterion = color_criterion.cuda()
         content_critetion = content_critetion.cuda()
         generator = generator.cuda()
@@ -88,18 +88,18 @@ def train(opt):
             images = Variable(torch.FloatTensor(images))
             gray_images = batch_gray(images)
 
-            if opt.gpu:
+            if opt.gpu == 1:
                 images = images.cuda()
                 gray_images = gray_images.cuda()
             gray_images = gray_images.unsqueeze(1)
             gen_images = generator(gray_images)
             gen_gray = batch_gray(gen_images)
-            if opt.gpu:
+            if opt.gpu == 1:
                 gen_gray = gen_gray.cuda()
             content_loss = content_critetion(gen_gray, gray_images)
             color_loss = color_criterion(gen_images, images)
             current_loss = content_loss * gamma + color_loss
-            if opt.gpu:
+            if opt.gpu == 1:
                 current_loss = current_loss.cuda()
             loss += current_loss.cpu().data.numpy()[0]
 
@@ -126,7 +126,7 @@ def inference(opt, model, x):
     else:
         x = Variable(torch.FloatTensor(x))
 
-    if opt.gpu:
+    if opt.gpu == 1:
         model = model.cuda()
         x = x.cuda()
 
