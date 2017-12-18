@@ -38,7 +38,6 @@ def batch_gray(images):
     batch_size = images.size()[0]
     h = images.size()[2]
     w = images.size()[3]
-
     result = Variable(torch.zeros([batch_size, h, w]))
     for i in xrange(batch_size):
         result[i] = gray(images[i])
@@ -81,7 +80,9 @@ def train(opt):
 
     for epoch in xrange(epoches):
 
+        content_sum_loss = 0
         loss = 0
+        color_sum_loss = 0
         for batch in xrange(num_samples/batch_size):
             images = np.array(data[batch:batch+batch_size])
             images = images.transpose((0, 3, 1, 2))
@@ -96,19 +97,22 @@ def train(opt):
             gen_gray = batch_gray(gen_images)
             if opt.gpu == 1:
                 gen_gray = gen_gray.cuda()
-            content_loss = content_critetion(gen_gray, gray_images)
-            color_loss = color_criterion(gen_images, images)
-            current_loss = content_loss * gamma + color_loss
-            if opt.gpu == 1:
-                current_loss = current_loss.cuda()
+            height = gen_images.size()[2]
+            width = gen_images.size()[3]
+            content_loss = (1/(height*width))*content_critetion(gen_gray, gray_images)
+            color_loss = (1/(height*width))*color_criterion(gen_images, images)
+            current_loss = content_loss + color_loss
             loss += current_loss.cpu().data.numpy()[0]
-
+            color_sum_loss += color_loss.cpu().data.numpy()[0]
+            content_sum_loss += content_loss.cpu().data.numpy()[0]
             train_optimizer.zero_grad()
-            current_loss.backward()
+            color_loss.backward()
+            content_loss.backward()
             train_optimizer.step()
 
             if batch % 5 == 0:
-                print("Epoch: %s Batch: %d Loss: %s" % (epoch, batch, loss/(batch+1)))
+                print("Epoch: %s Batch: %d Loss: %s Color Loss: %sContentLoss:%s" %
+                      (epoch, batch, loss/(batch+1), content_sum_loss/(batch+1), content_sum_loss/(batch+1)))
 
         torch.save(generator.state_dict(), 'model_params/epoch_%s_params.model' % epoch)
 
