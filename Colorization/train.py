@@ -62,14 +62,14 @@ def train(opt):
     # 'UNet'
 
     color_criterion = nn.MSELoss()
-    content_critetion = nn.L1Loss()
+    content_criterion = nn.L1Loss()
     generator = unet.UNet()
 
     gamma = 0.5
 
     if opt.gpu == 1:
         color_criterion = color_criterion.cuda()
-        content_critetion = content_critetion.cuda()
+        content_criterion = content_criterion.cuda()
         generator = generator.cuda()
 
     train_optimizer = optimizer.Adam(lr=opt.lr, params=generator.parameters())
@@ -80,9 +80,7 @@ def train(opt):
 
     for epoch in xrange(epoches):
 
-        content_sum_loss = 0
         loss = 0
-        color_sum_loss = 0
         for batch in xrange(num_samples/batch_size):
             images = np.array(data[batch:batch+batch_size])
             images = images.transpose((0, 3, 1, 2))
@@ -99,20 +97,17 @@ def train(opt):
                 gen_gray = gen_gray.cuda()
             height = gen_images.size()[2]
             width = gen_images.size()[3]
-            content_loss = (1/(height*width))*content_critetion(gen_gray, gray_images)
-            color_loss = (1/(height*width))*color_criterion(gen_images, images)
-            current_loss = content_loss + color_loss
+            content_loss = content_criterion(gen_gray, gray_images)
+            color_loss = color_criterion(gen_images, images)
+            current_loss = (1/(height*width))*(content_loss * gamma + color_loss)
             loss += current_loss.cpu().data.numpy()[0]
-            color_sum_loss += color_loss.cpu().data.numpy()[0]
-            content_sum_loss += content_loss.cpu().data.numpy()[0]
             train_optimizer.zero_grad()
-            color_loss.backward()
-            content_loss.backward()
+            current_loss.backward()
             train_optimizer.step()
 
             if batch % 5 == 0:
-                print("Epoch: %s Batch: %d Loss: %s Color Loss: %sContentLoss:%s" %
-                      (epoch, batch, loss/(batch+1), content_sum_loss/(batch+1), content_sum_loss/(batch+1)))
+                print("Epoch: %s Batch: %d Loss: %s" %
+                      (epoch, batch, loss/(batch+1)))
 
         torch.save(generator.state_dict(), 'model_params/epoch_%s_params.model' % epoch)
 
