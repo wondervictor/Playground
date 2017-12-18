@@ -35,7 +35,7 @@ class OverallLoss(nn.Module):
         self.color_loss = nn.MSELoss()
         self.content_loss = nn.L1Loss()
 
-    def forward(self, gen, target, gray_gen,gray_target, gamma=0.5):
+    def forward(self, gen, target, gray_gen, gray_target, gamma=0.5):
 
         color = self.color_loss(gen, target)
         content = self.content_loss(gray_gen, gray_target)
