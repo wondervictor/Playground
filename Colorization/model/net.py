@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import unet
 from torch.nn import functional as F
+from torch.autograd import Variable
 
 
 class FCN(nn.Module):
@@ -12,6 +13,20 @@ class FCN(nn.Module):
 
     def forward(self, x):
         pass
+
+
+class GrayLayer(nn.Module):
+
+    def __init__(self):
+        super(GrayLayer, self).__init__()
+
+    def forward(self, x):
+
+        (B, C, H, W) = x.size()
+        result = Variable(torch.zeros([B, 1, H, W]))
+        for i in xrange(B):
+            result[i] = 0.299 * x[i, 0] + 0.587 * x[i, 1] + 0.114 * x[i, 2]
+        return result
 
 
 class ColorModel(nn.Module):

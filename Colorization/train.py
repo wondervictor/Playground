@@ -102,7 +102,7 @@ def train(opt):
             (B, C, H, W) = gen_images.size()
             color_loss = (1/(C*H*W))*color_criterion(gen_images, images)
             current_loss = color_loss
-            #content_loss = content_criterion(gen_gray, ge)
+            content_loss = content_criterion(gen_gray, ge)
             #current_loss = criterion(gen_images, images, gen_gray, gray_images)
             loss += current_loss.cpu().data.numpy()[0]
             train_optimizer.zero_grad()
