@@ -15,7 +15,7 @@ from model.net import OverallLoss
 from data_provider import get_data
 
 
-def gray(image):
+def _gray(image):
     r = image[0]
     g = image[1]
     b = image[2]
@@ -43,7 +43,7 @@ def batch_gray(images):
     w = images.size()[3]
     result = Variable(torch.zeros([batch_size, h, w]))
     for i in xrange(batch_size):
-        result[i] = gray(images[i])
+        result[i] = _gray(images[i])
 
     return result
 
@@ -68,19 +68,20 @@ def train(opt):
     content_criterion = nn.MSELoss()
     color_criterion = nn.MSELoss()
     gamma = 0.5
+    gray = GrayLayer()
 
     if opt.gpu == 1:
 
         generator = generator.cuda()
         content_criterion = content_criterion.cuda()
         color_criterion = color_criterion.cuda()
+        gray = gray.cuda()
 
     train_optimizer = optimizer.Adam(lr=opt.lr, params=generator.parameters())
 
     print("Load Data ...")
     data = get_data(opt.path, opt.dataset)
     num_samples = len(data)
-    gray = GrayLayer()
 
     for epoch in xrange(epoches):
 
