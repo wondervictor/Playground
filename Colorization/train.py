@@ -10,6 +10,7 @@ from PIL import Image
 import torchvision.transforms as transforms
 from torch.autograd import Variable
 from model import unet
+from model.net import GrayLayer
 from model.net import OverallLoss
 from data_provider import get_data
 
@@ -66,7 +67,6 @@ def train(opt):
     generator = unet.UNetGray()
     content_criterion = nn.MSELoss()
     color_criterion = nn.MSELoss()
-    #criterion = OverallLoss()
     gamma = 0.5
 
     if opt.gpu == 1:
@@ -80,6 +80,7 @@ def train(opt):
     print("Load Data ...")
     data = get_data(opt.path, opt.dataset)
     num_samples = len(data)
+    gray = GrayLayer()
 
     for epoch in xrange(epoches):
 
@@ -88,12 +89,11 @@ def train(opt):
             images = np.array(data[batch:batch+batch_size])
             images = images.transpose((0, 3, 1, 2))
             images = Variable(torch.FloatTensor(images))
-            gray_images = batch_gray(images)
-
+            gray_images = gray(images)
             if opt.gpu == 1:
                 images = images.cuda()
                 gray_images = gray_images.cuda()
-            gray_images = gray_images.unsqueeze(1)
+
             gen_images, gen_gray = generator(gray_images)
             (B, C, H, W) = gen_images.size()
             content_loss = (1/(H*W))*content_criterion(gen_gray, gray_images)
