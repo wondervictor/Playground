@@ -64,18 +64,18 @@ def train(opt):
     model = opt.model
     # 'UNet'
 
-    generator = unet.UNetGray()
+    generator = unet.UNet()
     content_criterion = nn.MSELoss()
     color_criterion = nn.MSELoss()
     gamma = 0.5
-    gray = GrayLayer()
+    gray_layer = GrayLayer()
 
     if opt.gpu == 1:
 
         generator = generator.cuda()
         content_criterion = content_criterion.cuda()
         color_criterion = color_criterion.cuda()
-        gray = gray.cuda()
+        gray_layer = gray_layer.cuda()
 
     train_optimizer = optimizer.Adam(lr=opt.lr, params=generator.parameters())
 
@@ -90,14 +90,15 @@ def train(opt):
             images = np.array(data[batch:batch+batch_size])
             images = images.transpose((0, 3, 1, 2))
             images = Variable(torch.FloatTensor(images))
-            gray_images = gray(images)
+            gray_images = gray_layer(images)
             if opt.gpu == 1:
                 images = images.cuda()
                 gray_images = gray_images.cuda()
 
-            gen_images, gen_gray = generator(gray_images)
+            gen_images = generator(gray_images)
+            gen_gray_images = gray_layer(gen_images)
             (B, C, H, W) = gen_images.size()
-            content_loss = (1/(H*W))*content_criterion(gen_gray, gray_images)
+            content_loss = (1/(H*W))*content_criterion(gen_gray_images, gray_images)
             color_loss = (1/(C*H*W))*color_criterion(gen_images, images)
             current_loss = color_loss + content_loss
             loss += current_loss.cpu().data.numpy()[0]

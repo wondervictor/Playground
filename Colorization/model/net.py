@@ -17,13 +17,16 @@ class FCN(nn.Module):
 
 class GrayLayer(nn.Module):
 
-    def __init__(self):
+    def __init__(self, use_cuda):
         super(GrayLayer, self).__init__()
+        self.use_cuda = use_cuda
 
     def forward(self, x):
 
         (B, C, H, W) = x.size()
         result = Variable(torch.zeros([B, 1, H, W]))
+        if self.use_cuda:
+            result = result.cuda()
         for i in xrange(B):
             result[i] = 0.299 * x[i, 0] + 0.587 * x[i, 1] + 0.114 * x[i, 2]
         return result

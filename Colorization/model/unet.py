@@ -101,19 +101,6 @@ class UNet(nn.Module):
         return x
 
 
-class UNetGray(nn.Module):
-
-    def __init__(self):
-        super(UNetGray, self).__init__()
-        self.unet = UNet()
-        self.gray = GrayLayer()
-
-    def forward(self, x):
-        x = self.unet(x)
-        gray_x = self.gray(x)
-        return x, gray_x
-
-
 def __test_unet__():
 
     unet = UNet()
