@@ -63,15 +63,18 @@ def train(opt):
     batch_size = opt.batch_size
     model = opt.model
     # 'UNet'
+    if opt.gpu == 1:
+        use_gpu = True
+    else:
+        use_gpu = False
 
     generator = unet.UNet()
     content_criterion = nn.MSELoss()
     color_criterion = nn.MSELoss()
     gamma = 0.5
-    gray_layer = GrayLayer()
+    gray_layer = GrayLayer(use_gpu)
 
-    if opt.gpu == 1:
-
+    if use_gpu:
         generator = generator.cuda()
         content_criterion = content_criterion.cuda()
         color_criterion = color_criterion.cuda()
@@ -91,7 +94,7 @@ def train(opt):
             images = images.transpose((0, 3, 1, 2))
             images = Variable(torch.FloatTensor(images))
             gray_images = gray_layer(images)
-            if opt.gpu == 1:
+            if use_gpu:
                 images = images.cuda()
                 gray_images = gray_images.cuda()
 
@@ -110,7 +113,7 @@ def train(opt):
                 print("Epoch: %s Batch: %d Loss: %s" %
                       (epoch, batch, loss/(batch+1)))
 
-        if opt.gpu:
+        if use_gpu:
             torch.save(generator.state_dict(), 'model_params/epoch_%s_params.model' % epoch)
             torch.save(generator.cpu().state_dict(), 'model_params/epoch_%s_cpu_params.model' % epoch)
             generator = generator.cuda()
