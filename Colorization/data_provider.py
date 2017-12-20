@@ -15,6 +15,10 @@ def get_data(path, name='cifar'):
             x = datadict['data']
             data = x.reshape(50000, 32, 32, 3).astype("float")
             return data
+    elif name == 'VOC':
+
+        return data
+
     else:
         return data
 
