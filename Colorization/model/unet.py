@@ -6,6 +6,8 @@ import torch.nn as nn
 from torch.nn import functional as F
 from torch.autograd import Variable
 
+from net import GrayLayer
+
 
 class ConvBlock(nn.Module):
 
@@ -97,6 +99,19 @@ class UNet(nn.Module):
         x = self.out_convs(x8)
 
         return x
+
+
+class UNetGray(nn.Module):
+
+    def __init__(self):
+        super(UNetGray, self).__init__()
+        self.unet = UNet()
+        self.gray = GrayLayer()
+
+    def forward(self, x):
+        x = self.unet(x)
+        gray_x = self.gray(x)
+        return x, gray_x
 
 
 def __test_unet__():

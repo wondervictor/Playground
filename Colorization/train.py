@@ -63,7 +63,7 @@ def train(opt):
     model = opt.model
     # 'UNet'
 
-    generator = unet.UNet()
+    generator = unet.UNetGray()
     content_criterion = nn.MSELoss()
     color_criterion = nn.MSELoss()
     #criterion = OverallLoss()
@@ -94,16 +94,11 @@ def train(opt):
                 images = images.cuda()
                 gray_images = gray_images.cuda()
             gray_images = gray_images.unsqueeze(1)
-            gen_images = generator(gray_images)
-            gen_gray = batch_gray(gen_images)
-            if opt.gpu == 1:
-                gen_gray = gen_gray.cuda()
-
+            gen_images, gen_gray = generator(gray_images)
             (B, C, H, W) = gen_images.size()
+            content_loss = (1/(H*W))*content_criterion(gen_gray, gray_images)
             color_loss = (1/(C*H*W))*color_criterion(gen_images, images)
-            current_loss = color_loss
-            content_loss = content_criterion(gen_gray, ge)
-            #current_loss = criterion(gen_images, images, gen_gray, gray_images)
+            current_loss = color_loss + content_loss
             loss += current_loss.cpu().data.numpy()[0]
             train_optimizer.zero_grad()
             current_loss.backward()
