@@ -10,8 +10,7 @@ from torch.autograd import Variable
 from torch import functional as F
 import torch.optim as optimizer
 
-from net import GrayLayer
-from unet import UNet
+from unet import UNet, GrayLayer
 
 
 class GANLoss(nn.Module):
@@ -94,7 +93,7 @@ class Disciminator(nn.Module):
                     padding=1,
                     stride=1
                 ),
-                nn.BatchNorm2d(ndf),
+                nn.BatchNorm2d(ndf*cur_chan),
                 nn.LeakyReLU(0.2, inplace=True)
             ]
             prev_chan = cur_chan
@@ -162,7 +161,7 @@ class ColorGAN(object):
 
     def train_step(self, real_y):
 
-        real_y = Variable(torch.FloatTensor(real_y))
+        #real_y = Variable(torch.FloatTensor(real_y))
         real_x = self.gray_layer(real_y)
 
         if self.use_gpu:
@@ -225,8 +224,35 @@ class ColorGAN(object):
             torch.save(self.discriminator.cpu().state_dict(), directory + "generator_cpu_params_%s.pth" % index)
 
 
+def __test__gan():
+    from PIL import Image
+    from torchvision import transforms
+    import collections
 
+    Option = collections.namedtuple('Option', 'train, gpu, lr, batch_size, epoches,use_sigmoid')
+    crop = transforms.RandomCrop([256, 256])
+    to_tensor = transforms.ToTensor()
+    path = '../test_images/2012.jpg'
+    image = Image.open(path)
+    image = crop(image)
+    image = to_tensor(image)
 
+    image = Variable(image)
+    image = image.unsqueeze(0)
+
+    opt = Option(
+        train=True,
+        gpu=0,
+        lr=0.001,
+        batch_size=1,
+        epoches=1,
+        use_sigmoid=False
+    )
+    gan = ColorGAN(opt)
+    p = gan.train_step(image)
+    print(p)
+
+#__test__gan()
 
 
 
