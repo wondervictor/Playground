@@ -17,6 +17,8 @@ def get_data(path, name='cifar'):
             return data
     elif name == 'VOC':
 
+
+
         return data
 
     else:
