@@ -119,12 +119,15 @@ def main():
             "discrim_fake_loss": discrim_fake_loss.cpu().data[0],
             "discrim_real_loss": discrim_real_loss.cpu().data[0],
         """
-        print("Iteration: %s\n" % epoch)
-        print("Generator Loss:\nGAN: %s Content: %s Color: %s\n"
+        print("Iteration: %s" % epoch)
+        print("Generator Loss:\nGAN: %s Content: %s Color: %s"
               % (losses['gen_gan_loss'], losses['gen_content_loss'], losses['gen_color_loss']))
         print("Discriminator Loss\nFake Loss: %s Real Loss: %s\n"
               % (losses['discrim_fake_loss'], losses['discrim_real_loss']))
 
+        if (epoch+1) % 50 == 0:
+
+            color_gan.save(epoch, params.params_dir)
 
 if __name__ == '__main__':
     main()
