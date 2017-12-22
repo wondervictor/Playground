@@ -159,7 +159,7 @@ class ColorGAN(object):
 
         self.epoches = opt.epoches
         self.batch_size = opt.batch_size
-        self.gan_criterion = GANLoss()
+        self.gan_criterion = GANLoss(self.use_gpu)
         self.l1_criterion = nn.L1Loss()
         self.current_loss = dict()
 
