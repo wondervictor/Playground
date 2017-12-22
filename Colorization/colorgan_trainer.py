@@ -76,7 +76,7 @@ def load_batch_data(batch_size, image_queue):
     result_tensor = torch.zeros((batch_size, 3, image_height, image_height))
     for x in xrange(batch_size):
         result_tensor[x] = image_queue.get()
-    print("Get data from queue")
+    print("Get data from queue/%s" % image_queue.qsize())
     return result_tensor
 
 
