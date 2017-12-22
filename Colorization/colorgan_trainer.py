@@ -54,7 +54,7 @@ def init_data(image_queue, directory, paths, init_size):
 
 def load_data_concurrently(image_queue, paths, directory, max_size):
 
-    def create_image((q, paths, max_size, dir_)):
+    def create_image(q, paths, max_size, dir_):
 
         while True:
             while q.qsize() < max_size:
@@ -71,10 +71,11 @@ def load_data_concurrently(image_queue, paths, directory, max_size):
 
 def load_batch_data(batch_size, image_queue):
 
-    data = []
+    image_height = 256
+    result_tensor = torch.zeros((batch_size, 3, image_height, image_height))
     for x in xrange(batch_size):
-        data.append(image_queue.get())
-    return data
+        result_tensor[x] = image_queue.get()
+    return result_tensor
 
 
 def main():
@@ -102,7 +103,7 @@ def main():
     for epoch in xrange(params.epoches):
 
         batch_data = load_batch_data(params.batch_size, data_queue)
-        batch_data = Variable(batch_data)
+        batch_data = Variable(torch.FloatTensor(batch_data))
 
         if params.gpu:
             batch_data = batch_data.cuda()
