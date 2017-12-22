@@ -139,29 +139,28 @@ class ColorGAN(object):
     def __init__(self, opt):
 
         self.is_train = opt.train
-        self.use_sigmoid = opt.use_sigmoid
         self.use_gpu = opt.gpu
 
         self.generator = ColorGenerator()
         self.gray_layer = GrayLayer(self.use_gpu)
 
         if self.is_train:
+            self.use_sigmoid = opt.use_sigmoidt
             self.discriminator = Disciminator(in_chan=4, use_sigmoid=self.use_sigmoid)
+            lr = opt.lr
+            self.generator_optimizer = optimizer.Adam(lr=lr, params=self.generator.parameters())
+            self.discriminator_optimizer = optimizer.Adam(lr=lr, params=self.discriminator.parameters())
+
+            self.epoches = opt.epoches
+            self.batch_size = opt.batch_size
+            self.gan_criterion = GANLoss(self.use_gpu)
+            self.l1_criterion = nn.L1Loss()
+            self.current_loss = dict()
 
         if self.use_gpu:
             self.generator = self.generator.cuda()
             self.discriminator = self.discriminator.cuda()
             self.gray_layer = self.gray_layer.cuda()
-
-        lr = opt.lr
-        self.generator_optimizer = optimizer.Adam(lr=lr, params=self.generator.parameters())
-        self.discriminator_optimizer = optimizer.Adam(lr=lr, params=self.discriminator.parameters())
-
-        self.epoches = opt.epoches
-        self.batch_size = opt.batch_size
-        self.gan_criterion = GANLoss(self.use_gpu)
-        self.l1_criterion = nn.L1Loss()
-        self.current_loss = dict()
 
         print("init network")
 
@@ -216,18 +215,28 @@ class ColorGAN(object):
 
         pass
 
+    def load_state_dict(self, model_path):
+
+        self.generator.load_state_dict(torch.load(model_path))
+        print("Load State Dict finished")
+
+    def inference(self, input_images):
+
+        result = self.generator(input_images)
+        return result
+
     def save(self, index, directory):
 
         if self.use_gpu:
             torch.save(self.generator.cpu().state_dict(), directory + "generator_cpu_params_%s.pth" % index)
-            torch.save(self.discriminator.cpu().state_dict(), directory + "generator_cpu_params_%s.pth" % index)
+            torch.save(self.discriminator.cpu().state_dict(), directory + "discriminator_cpu_params_%s.pth" % index)
             torch.save(self.generator.state_dict(), directory + "generator_gpu_params_%s.pth" % index)
-            torch.save(self.discriminator.state_dict(), directory + "generator_gpu_params_%s.pth" % index)
+            torch.save(self.discriminator.state_dict(), directory + "discriminator_gpu_params_%s.pth" % index)
             self.generator = self.generator.cuda()
             self.discriminator = self.discriminator.cuda()
         else:
             torch.save(self.generator.cpu().state_dict(), directory + "generator_cpu_params_%s.pth" % index)
-            torch.save(self.discriminator.cpu().state_dict(), directory + "generator_cpu_params_%s.pth" % index)
+            torch.save(self.discriminator.cpu().state_dict(), directory + "discriminator_cpu_params_%s.pth" % index)
 
 
 def __test__gan():
