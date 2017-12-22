@@ -15,7 +15,7 @@ from unet import UNet, GrayLayer
 
 class GANLoss(nn.Module):
 
-    def __init__(self, use_lsgan=True,
+    def __init__(self, use_gpu, use_lsgan=True,
                  target_real_label=1.0,
                  target_fake_label=0.0,
                  tensor=torch.FloatTensor):
@@ -26,6 +26,7 @@ class GANLoss(nn.Module):
         self.real_label_var = None
         self.fake_label_var = None
         self.Tensor = tensor
+        self.use_gpu = use_gpu
         if use_lsgan:
             self.loss = nn.MSELoss()
         else:
@@ -38,7 +39,10 @@ class GANLoss(nn.Module):
                             (self.real_label_var.numel() != input.numel()))
             if create_label:
                 real_tensor = self.Tensor(input.size()).fill_(self.real_label)
+
                 self.real_label_var = Variable(real_tensor, requires_grad=False)
+                if self.use_gpu:
+                    self.real_label_var = self.real_label_var.cuda()
             target_tensor = self.real_label_var
         else:
             create_label = ((self.fake_label_var is None) or
@@ -46,6 +50,8 @@ class GANLoss(nn.Module):
             if create_label:
                 fake_tensor = self.Tensor(input.size()).fill_(self.fake_label)
                 self.fake_label_var = Variable(fake_tensor, requires_grad=False)
+                if self.use_gpu:
+                    self.fake_label_var = self.fake_label_var.cuda()
             target_tensor = self.fake_label_var
         return target_tensor
 
