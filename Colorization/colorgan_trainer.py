@@ -75,6 +75,7 @@ def load_batch_data(batch_size, image_queue):
     result_tensor = torch.zeros((batch_size, 3, image_height, image_height))
     for x in xrange(batch_size):
         result_tensor[x] = image_queue.get()
+    print("Get data from queue")
     return result_tensor
 
 
@@ -97,8 +98,8 @@ def main():
     data_queue = Queue.Queue()
 
     image_paths = load_image_path()
-    init_data(data_queue, params.data_dir, image_paths, 10000)
-    load_data_concurrently(data_queue, image_paths, params.data_dir, 15000)
+    init_data(data_queue, params.data_dir, image_paths, 3000)
+    load_data_concurrently(data_queue, image_paths, params.data_dir, 5000)
 
     for epoch in xrange(params.epoches):
 
