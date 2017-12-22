@@ -125,9 +125,10 @@ def main():
         print("Discriminator Loss\nFake Loss: %s Real Loss: %s\n"
               % (losses['discrim_fake_loss'], losses['discrim_real_loss']))
 
-        if (epoch+1) % 50 == 0:
+        if (epoch+1) % 100 == 0:
 
             color_gan.save(epoch, params.params_dir)
+
 
 if __name__ == '__main__':
     main()

@@ -145,7 +145,7 @@ class ColorGAN(object):
         self.gray_layer = GrayLayer(self.use_gpu)
 
         if self.is_train:
-            self.use_sigmoid = opt.use_sigmoidt
+            self.use_sigmoid = opt.use_sigmoid
             self.discriminator = Disciminator(in_chan=4, use_sigmoid=self.use_sigmoid)
             lr = opt.lr
             self.generator_optimizer = optimizer.Adam(lr=lr, params=self.generator.parameters())
