@@ -66,6 +66,7 @@ def load_data_concurrently(image_queue, paths, directory, max_size):
                 q.put(img)
 
     image_thread = threading.Thread(target=create_image, args=(image_queue, paths, max_size, directory))
+    image_thread.daemon = True
     image_thread.start()
 
 
