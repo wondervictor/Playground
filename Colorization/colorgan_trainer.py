@@ -7,9 +7,11 @@ import random
 import argparse
 
 import torch
+import numpy as np
 from torch.autograd import Variable
 from torchvision import transforms
 from PIL import Image
+from skimage import color, io
 
 
 from model.color_gan import ColorGAN
@@ -21,6 +23,12 @@ to_tensor = transforms.ToTensor()
 image_path_list = 'pascal_voc_image_list.txt'
 
 
+def rgb2lab(img):
+    return color.rgb2lab(img)
+
+def lab2rgb(img):
+    return color.lab2rgb(img)
+
 def crop_image(img):
     """
     Random crop images to 256 * 256
@@ -31,7 +39,10 @@ def crop_image(img):
         img = resize(img)
 
     img = crop(img)
-    return to_tensor(img)
+    img = np.array(img)
+    lab_image = rgb2lab(img)
+    return torch.FloatTensor([lab_image[:,:,0]]), \
+           torch.FloatTensor([lab_image[:,:,0], lab_image[:,:,1],lab_image[:,:,2]])
 
 
 def load_image_path():
@@ -62,8 +73,8 @@ def load_data_concurrently(image_queue, paths, directory, max_size):
                 idx = random.randint(0, len(paths)-1)
                 path = dir_ + paths[idx]
                 img = Image.open(path)
-                img = crop_image(img)
-                q.put(img)
+                x, y = crop_image(img)
+                q.put((x,y))
 
     image_thread = threading.Thread(target=create_image, args=(image_queue, paths, max_size, directory))
     image_thread.daemon = True
@@ -73,11 +84,14 @@ def load_data_concurrently(image_queue, paths, directory, max_size):
 def load_batch_data(batch_size, image_queue):
 
     image_height = 256
+    input_tensor = torch.zeros((batch_size, 1, image_height, image_height))
     result_tensor = torch.zeros((batch_size, 3, image_height, image_height))
     for x in xrange(batch_size):
-        result_tensor[x] = image_queue.get()
+        m,n = image_queue.get()
+        result_tensor[x] = n
+        input_tensor[x] = m
     print("Get data from queue/%s" % image_queue.qsize())
-    return result_tensor
+    return input_tensor, result_tensor
 
 
 def main():
@@ -104,13 +118,14 @@ def main():
 
     for epoch in xrange(params.epoches):
 
-        batch_data = load_batch_data(params.batch_size, data_queue)
-        batch_data = Variable(torch.FloatTensor(batch_data))
+        input_images, output_images = load_batch_data(params.batch_size, data_queue)
+        batch_input = Variable(torch.FloatTensor(input_images))
+        batch_result = Variable(torch.FloatTensor(output_images))
 
         if params.gpu:
-            batch_data = batch_data.cuda()
-
-        losses = color_gan.train_step(batch_data)
+            batch_input = batch_input.cuda()
+            batch_result = batch_result.cuda()
+        losses = color_gan.train_step(batch_input, batch_result)
 
         """
             "gen_content_loss": l1_content_loss.cpu().data[0],

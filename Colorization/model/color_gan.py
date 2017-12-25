@@ -62,12 +62,14 @@ class GANLoss(nn.Module):
 
 class ColorGenerator(nn.Module):
 
-    def __init__(self):
+    def __init__(self, out_ch):
         super(ColorGenerator, self).__init__()
-        self.genrator = UNet()
+        self.genrator = UNet(out_ch)
 
     def forward(self, x):
-        return self.genrator(x)
+        ab = self.genrator(x)
+        x = torch.cat([x, ab],dim=1)
+        return x
 
 
 class Disciminator(nn.Module):
@@ -141,7 +143,7 @@ class ColorGAN(object):
         self.is_train = opt.train
         self.use_gpu = opt.gpu
 
-        self.generator = ColorGenerator()
+        self.generator = ColorGenerator(2)
         self.gray_layer = GrayLayer(self.use_gpu)
 
         if self.is_train:
@@ -164,10 +166,10 @@ class ColorGAN(object):
 
         print("init network")
 
-    def train_step(self, real_y):
+    def train_step(self, real_x, real_y):
 
         #real_y = Variable(torch.FloatTensor(real_y))
-        real_x = self.gray_layer(real_y)
+        #real_x = self.gray_layer(real_y)
 
         if self.use_gpu:
             real_x = real_x.cuda()

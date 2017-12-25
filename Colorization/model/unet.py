@@ -15,10 +15,10 @@ class ConvBlock(nn.Module):
         super(ConvBlock, self).__init__()
         self.convblock = nn.Sequential(
             nn.Conv2d(in_chans, out_chans, 3, padding=1),
-            nn.ReLU(),
+            nn.LeakyReLU(negative_slope=0.2),
             nn.BatchNorm2d(out_chans),
             nn.Conv2d(out_chans, out_chans, 3, padding=1),
-            nn.ReLU(),
+            nn.LeakyReLU(negative_slope=0.2),
             nn.BatchNorm2d(out_chans)
         )
 
@@ -67,7 +67,7 @@ class UpConv(nn.Module):
 
 class UNet(nn.Module):
 
-    def __init__(self):
+    def __init__(self, output_ch):
         super(UNet, self).__init__()
 
         self.in_convs = ConvBlock(1, 64)
@@ -81,7 +81,7 @@ class UNet(nn.Module):
         self.up4 = UpConv(128, 64)
 
         self.out_convs = nn.Sequential(
-            nn.Conv2d(64, 3, 1, padding=0)
+            nn.Conv2d(64, output_ch, 1, padding=0)
         )
 
     def forward(self, x):
