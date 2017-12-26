@@ -67,8 +67,8 @@ class ColorGenerator(nn.Module):
         self.genrator = UNet(out_ch)
 
     def forward(self, x):
-        ab = self.genrator(x)
-        x = torch.cat([x, ab],dim=1)
+        x = self.genrator(x)
+        #x = torch.cat([x, ab], dim=1)
         return x
 
 
@@ -143,7 +143,7 @@ class ColorGAN(object):
         self.is_train = opt.train
         self.use_gpu = opt.gpu
 
-        self.generator = ColorGenerator(2)
+        self.generator = ColorGenerator(3)
         self.gray_layer = GrayLayer(self.use_gpu)
 
         if self.is_train:
@@ -166,10 +166,10 @@ class ColorGAN(object):
 
         print("init network")
 
-    def train_step(self, real_x, real_y):
+    def train_step(self, real_y):
 
         #real_y = Variable(torch.FloatTensor(real_y))
-        #real_x = self.gray_layer(real_y)
+        real_x = self.gray_layer(real_y)
 
         if self.use_gpu:
             real_x = real_x.cuda()
