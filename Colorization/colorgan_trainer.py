@@ -110,9 +110,7 @@ def load_batch_data(batch_size, image_queue, use_lab):
         result_tensor = torch.zeros((batch_size, 3, image_height, image_height))
 
         for x in xrange(batch_size):
-
-            m,n = image_queue.get()
-            n = image_queue.get()
+            m, n = image_queue.get()
             result_tensor[x] = n
             input_tensor[x] = m
         print("Get data from queue/%s" % image_queue.qsize())
@@ -142,18 +140,24 @@ def main():
 
     params = parser.parse_args()
 
+    use_lab = params.use_lab
+    if use_lab == 1:
+        use_lab = True
+    else:
+        use_lab = False
+
     color_gan = ColorGAN(params)
 
     data_queue = Queue.Queue()
 
     image_paths = load_image_path()
-    init_data(data_queue, params.data_dir, image_paths, 3000, params.use_lab)
-    load_data_concurrently(data_queue, image_paths, params.data_dir, 5000, params.use_lab)
+    init_data(data_queue, params.data_dir, image_paths, 3000, use_lab)
+    load_data_concurrently(data_queue, image_paths, params.data_dir, 5000, use_lab)
 
     for epoch in xrange(params.epoches):
 
         if params.use_lab:
-            output_images, input_images = load_batch_data(params.batch_size, data_queue, params.use_lab)
+            output_images, input_images = load_batch_data(params.batch_size, data_queue, use_lab)
             batch_input = Variable(torch.FloatTensor(input_images))
             batch_result = Variable(torch.FloatTensor(output_images))
 
@@ -162,7 +166,7 @@ def main():
                 batch_result = batch_result.cuda()
             losses = color_gan.train_step(batch_result, batch_input)
         else:
-            output_images = load_batch_data(params.batch_size, data_queue, params.use_lab)
+            output_images = load_batch_data(params.batch_size, data_queue, use_lab)
             batch_result = Variable(torch.FloatTensor(output_images))
 
             if params.gpu:
