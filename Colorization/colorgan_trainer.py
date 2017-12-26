@@ -181,8 +181,8 @@ def main():
             "discrim_real_loss": discrim_real_loss.cpu().data[0],
         """
         print("Iteration: %s" % epoch)
-        print("Generator Loss:\nGAN: %s Content: %s Color: %s"
-              % (losses['gen_gan_loss'], losses['gen_content_loss'], losses['gen_color_loss']))
+        print("Generator Loss:\nGAN: %s L1: %s "
+              % (losses['gen_gan_loss'], losses['gen_l1_loss']))
         print("Discriminator Loss\nFake Loss: %s Real Loss: %s\n"
               % (losses['discrim_fake_loss'], losses['discrim_real_loss']))
 
