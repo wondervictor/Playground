@@ -62,14 +62,19 @@ class GANLoss(nn.Module):
 
 class ColorGenerator(nn.Module):
 
-    def __init__(self, out_ch):
+    def __init__(self, use_lab):
         super(ColorGenerator, self).__init__()
-        self.genrator = UNet(out_ch)
+        self.use_lab = use_lab
+        if use_lab:
+            self.genrator = UNet(2)
+        else:
+            self.genrator = UNet(3)
 
     def forward(self, x):
-        x = self.genrator(x)
-        #x = torch.cat([x, ab], dim=1)
-        return x
+        res = self.genrator(x)
+        if self.use_lab:
+            res = torch.cat([x, res], dim=1)
+        return res
 
 
 class Disciminator(nn.Module):
@@ -142,8 +147,9 @@ class ColorGAN(object):
 
         self.is_train = opt.train
         self.use_gpu = opt.gpu
+        self.use_lab = opt.use_lab
 
-        self.generator = ColorGenerator(3)
+        self.generator = ColorGenerator(self.use_lab)
         self.gray_layer = GrayLayer(self.use_gpu)
 
         if self.is_train:
@@ -166,10 +172,11 @@ class ColorGAN(object):
 
         print("init network")
 
-    def train_step(self, real_y):
+    def train_step(self, real_y, real_x=None):
 
         #real_y = Variable(torch.FloatTensor(real_y))
-        real_x = self.gray_layer(real_y)
+        if not self.use_lab:
+            real_x = self.gray_layer(real_y)
 
         if self.use_gpu:
             real_x = real_x.cuda()
@@ -192,20 +199,23 @@ class ColorGAN(object):
 
         # Update Generator
         l1_color_loss = self.l1_criterion(fake_y, real_y)
-        fake_x = self.gray_layer(fake_y)
-        l1_content_loss = self.l1_criterion(fake_x, real_x)
+        if not self.use_lab:
+            fake_x = self.gray_layer(fake_y)
+            l1_content_loss = self.l1_criterion(fake_x, real_x)
+            l1_loss = l1_color_loss + l1_content_loss
+        else:
+            l1_loss = l1_color_loss
 
-        gen_discrim_fake = self.discriminator(torch.cat([real_x, fake_y],dim=1))
+        gen_discrim_fake = self.discriminator(torch.cat([real_x, fake_y], dim=1))
         gen_gan_loss = self.gan_criterion(gen_discrim_fake, True)
-        gen_loss = l1_color_loss + l1_content_loss + gen_gan_loss
+        gen_loss = l1_loss + gen_gan_loss
 
         self.generator_optimizer.zero_grad()
         gen_loss.backward()
         self.generator_optimizer.step()
 
         self.current_loss = {
-            "gen_content_loss": l1_content_loss.cpu().data[0],
-            "gen_color_loss": l1_color_loss.cpu().data[0],
+            "gen_l1_loss": l1_loss.cpu().data[0],
             "gen_gan_loss": gen_gan_loss.cpu().data[0],
             "discrim_fake_loss": discrim_fake_loss.cpu().data[0],
             "discrim_real_loss": discrim_real_loss.cpu().data[0],

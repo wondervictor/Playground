@@ -43,8 +43,8 @@ def crop_image_lab(img):
     img = crop(img)
     img = np.array(img)
     lab_image = rgb2lab(img)
-    return torch.FloatTensor([lab_image[:,:,0]]), \
-           torch.FloatTensor([lab_image[:,:,0], lab_image[:,:,1],lab_image[:,:,2]])
+    return torch.FloatTensor([lab_image[:, :, 0]]), \
+        torch.FloatTensor([lab_image[:, :, 0], lab_image[:, :, 1],lab_image[:, :, 2]])
 
 
 def crop_image(img):
@@ -69,18 +69,21 @@ def load_image_path():
     return paths
 
 
-def init_data(image_queue, directory, paths, init_size):
+def init_data(image_queue, directory, paths, init_size, use_lab):
 
     for i in xrange(init_size):
         path = directory + paths[i]
         img = Image.open(path)
-        img = crop_image(img)
+        if use_lab:
+            img = crop_image_lab(img)
+        else:
+            img = crop_image(img)
         image_queue.put(img)
 
 
-def load_data_concurrently(image_queue, paths, directory, max_size):
+def load_data_concurrently(image_queue, paths, directory, max_size, use_lab):
 
-    def create_image(q, paths, max_size, dir_):
+    def create_image(q, paths, max_size, dir_, use_lab):
 
         while True:
             while q.qsize() < max_size:
@@ -88,28 +91,40 @@ def load_data_concurrently(image_queue, paths, directory, max_size):
                 idx = random.randint(0, len(paths)-1)
                 path = dir_ + paths[idx]
                 img = Image.open(path)
-                x = crop_image(img)
+                if not use_lab:
+                    x = crop_image(img)
+                else:
+                    x = crop_image_lab(img)
                 q.put(x)
-                # x, y = crop_image(img)
-                # q.put((x,y))
 
-    image_thread = threading.Thread(target=create_image, args=(image_queue, paths, max_size, directory))
+    image_thread = threading.Thread(target=create_image, args=(image_queue, paths, max_size, directory, use_lab))
     image_thread.daemon = True
     image_thread.start()
 
 
-def load_batch_data(batch_size, image_queue):
+def load_batch_data(batch_size, image_queue, use_lab):
 
     image_height = 256
-    # input_tensor = torch.zeros((batch_size, 1, image_height, image_height))
-    result_tensor = torch.zeros((batch_size, 3, image_height, image_height))
-    for x in xrange(batch_size):
-        # m,n = image_queue.get()
-        n = image_queue.get()
-        result_tensor[x] = n
-        # input_tensor[x] = m
-    print("Get data from queue/%s" % image_queue.qsize())
-    return result_tensor# input_tensor, result_tensor
+    if use_lab:
+        input_tensor = torch.zeros((batch_size, 1, image_height, image_height))
+        result_tensor = torch.zeros((batch_size, 3, image_height, image_height))
+
+        for x in xrange(batch_size):
+
+            m,n = image_queue.get()
+            n = image_queue.get()
+            result_tensor[x] = n
+            input_tensor[x] = m
+        print("Get data from queue/%s" % image_queue.qsize())
+        return result_tensor, input_tensor
+    else:
+        result_tensor = torch.zeros((batch_size, 3, image_height, image_height))
+
+        for x in xrange(batch_size):
+            n = image_queue.get()
+            result_tensor[x] = n
+        print("Get data from queue/%s" % image_queue.qsize())
+        return result_tensor
 
 
 def main():
@@ -123,6 +138,7 @@ def main():
     parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate')
     parser.add_argument('--data_dir', type=str, default='data/', help='dataset directory')
     parser.add_argument('--params_dir', type=str, default='model_params/', help='dataset directory')
+    parser.add_argument('--use_lab', type=int, default=0, help='use CIE Lab Color Space')
 
     params = parser.parse_args()
 
@@ -131,19 +147,27 @@ def main():
     data_queue = Queue.Queue()
 
     image_paths = load_image_path()
-    init_data(data_queue, params.data_dir, image_paths, 3000)
-    load_data_concurrently(data_queue, image_paths, params.data_dir, 5000)
+    init_data(data_queue, params.data_dir, image_paths, 3000, params.use_lab)
+    load_data_concurrently(data_queue, image_paths, params.data_dir, 5000, params.use_lab)
 
     for epoch in xrange(params.epoches):
 
-        output_images = load_batch_data(params.batch_size, data_queue)
-        # batch_input = Variable(torch.FloatTensor(input_images))
-        batch_result = Variable(torch.FloatTensor(output_images))
+        if params.use_lab:
+            output_images, input_images = load_batch_data(params.batch_size, data_queue, params.use_lab)
+            batch_input = Variable(torch.FloatTensor(input_images))
+            batch_result = Variable(torch.FloatTensor(output_images))
 
-        if params.gpu:
-            # batch_input = batch_input.cuda()
-            batch_result = batch_result.cuda()
-        losses = color_gan.train_step(batch_result)
+            if params.gpu:
+                batch_input = batch_input.cuda()
+                batch_result = batch_result.cuda()
+            losses = color_gan.train_step(batch_result, batch_input)
+        else:
+            output_images = load_batch_data(params.batch_size, data_queue, params.use_lab)
+            batch_result = Variable(torch.FloatTensor(output_images))
+
+            if params.gpu:
+                batch_result = batch_result.cuda()
+            losses = color_gan.train_step(batch_result)
 
         """
             "gen_content_loss": l1_content_loss.cpu().data[0],
